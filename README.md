@@ -39,7 +39,7 @@ The `y`, `u`, and `v` properties contain the data for luma, chroma (blue), and c
 
 *Threading*
 
-Since video processing is CPU-intensive, it is expected that frame data may need to be shuffled between multiple Web Worker threads -- for instance a video decoder in a background thread sending frames to be displayed back to the main thread. Frame buffer objects are plain JS objects to facilitate being sent via `[postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)`'s "structured clone" algorithm. To transfer the raw pixel data buffers instead of copying them in this case, list an array containing the `bytes` subproperties as transferables:
+Since video processing is CPU-intensive, it is expected that frame data may need to be shuffled between multiple Web Worker threads -- for instance a video decoder in a background thread sending frames to be displayed back to the main thread. Frame buffer objects are plain JS objects to facilitate being sent via [`postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)'s "structured clone" algorithm. To transfer the raw pixel data buffers instead of copying them in this case, list an array containing the `bytes` subproperties as transferables:
 
 ```
 // video-worker.js
