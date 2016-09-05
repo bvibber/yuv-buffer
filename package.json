@@ -1,0 +1,21 @@
+{
+  "name": "yuv-buffer",
+  "version": "1.0.0",
+  "description": "Class representing a YUV-format image buffer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "yuv",
+    "ycbcr",
+    "frame",
+    "buffer"
+  ],
+  "author": "Brion Vibber <brion@pobox.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-eslint": "^19.0.0"
+  }
+}
