@@ -46,18 +46,6 @@ ONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Represents metadata about a YUV frame format.
  * @typedef {Object} YUVFormat
- *
- * @property {number} width - width of the encoded frame in pixels
- * @property {number} height - height of the encoded frame in pixels
- * @property {number} cropLeft - pixels to crop from left of frame
- * @property {number} cropTop - pixels to crop from top of frame
- * @property {number} cropWidth - pixel width of crop region
- * @property {number} cropHeight - pixel height of crop region
- * @property {number} displayWidth - display width override for aspect ratio
- * @property {number} displayHeight - display height override for aspect ratio
- * @property {number} chromaSubsamplingX - ratio of chroma pixel width to luma pixel width
- * @property {number} chromaSubsamplingY - ratio of chroma pixel height to luma pixel height
- *
  * @property {YUVSize} frame - size of the encoded frame
  * @property {YUVRect} crop - area within the frame to be displayed
  * @property {YUVSize} display - display size of the crop area
