@@ -35,6 +35,86 @@ The `y`, `u`, and `v` properties contain the data for luma, chroma (blue), and c
 * `bytes` holds a `UInt8Array` with raw pixel data. Beware that using a view into a larger array buffer (such as an emscripten-compiled C module's heap) is valid but may lead to inefficient data transfers between worker threads. Currently only 8-bit depth is supported.
 * `stride` specifies the number of bytes between the start of each row in the `bytes` array; this may be larger than the number of pixels in a row, and should usually be a multiple of 4 for alignment purposes.
 
+# Creating a frame buffer
+
+First, you'll need a `YUVFormat` object describing the memory layout of the pixel data:
+
+```
+// 1080p for a format that requires 16-pixel blocks, showing crop region
+var format = {
+  frame: {
+    width: 1920,
+    height: 1088
+  }
+  crop: {
+    left: 0,
+    top: 4,
+    width: 1920,
+    height: 1080
+  },
+  display: {
+    width: 1920,
+    height: 1080
+  },
+  chroma: YUVBuffer.CHROMA_420
+};
+```
+
+```
+// 480p anamorphic DVD, showing non-default aspect ratio
+var format = {
+  frame: {
+    width: 720,
+    height: 480
+  },
+  crop: {
+    left: 0,
+    top: 0,
+    width: 720,
+    height: 480
+  },
+  display: {
+    width: 854,
+    height: 480
+  },
+  chroma: YUVBuffer.CHROMA_420
+};
+```
+
+All fields are required. A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly!
+
+
+You can allocate a blank frame with enough memory to work with using the `YUVBuffer.allocFrame` helper function:
+
+```
+var frame = YUVBuffer.allocFrame(format);
+console.log(frame.y.bytes.length); // bunch o' bytes
+```
+
+Or, you can create one yourself, such as when extracting from a different data structure. For instance when extracting data from a C library translated with emscripten, you might do something like this:
+
+```
+function extractFromHeap(yptr, ystride, uptr, ustride, vptr, vstride) {
+  var frame = {
+    format: this.format,
+    y: {
+      bytes: Module.HEAPU8.slice(yptr, yptr + ystride * this.format.frame.height),
+      stride: ystride
+    },
+    u: {
+      bytes: Module.HEAPU8.slice(uptr, uptr + ustride * YUVBuffer.yToChroma(this.format, this.format.frame.height)),
+      stride: ustride
+    },
+    v: {
+      bytes: Module.HEAPU8.slice(vptr, vptr + vstride * YUVBuffer.yToChroma(this.format, this.format.frame.height)),
+      stride: vstride
+    }
+  }
+  // And pass back to caller
+  this.onFrameCallback(frame);
+}
+```
+
 # Performance concerns
 
 *Threading*
