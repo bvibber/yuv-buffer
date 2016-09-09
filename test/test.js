@@ -138,4 +138,95 @@ describe('YUVBuffer', function() {
       });
     });
   });
+  context('planar functions', function() {
+    var anamorphic = YUVBuffer.format({
+      width: 720, // can have stride == width
+      height: 480,
+      chromaWidth: 720 / 2,
+      chromaHeight: 480 / 2,
+      displayWidth: 853,
+    });
+    var square = YUVBuffer.format({
+      width: 854, // not 1/4-even number of pixels!
+      height: 480,
+      chromaWidth: 854 / 2,
+      chromaHeight: 480 / 2,
+      cropWidth: 853
+    });
+    function planeTest(plane, width, height) {
+      context('for ' + width + 'x' + height, function() {
+        it('should return expected format', function() {
+          assert(plane.bytes instanceof Uint8Array);
+          assert(typeof plane.stride === 'number');
+        });
+        it('should return expected size', function() {
+          assert(plane.bytes.length === plane.stride * height)
+        });
+        it('should return stride >= width', function() {
+          assert(plane.stride >= width);
+        });
+        it('should return a stride multiple of 4', function() {
+          assert(plane.stride % 4 === 0);
+        });
+      });
+      return plane;
+    }
+    describe('#allocPlane()', function() {
+      context('when given just a size', function() {
+        function alloc(format) {
+          return YUVBuffer.allocPlane(format.width, format.height);
+        }
+        planeTest(alloc(anamorphic), anamorphic.width, anamorphic.height);
+        planeTest(alloc(square), square.width, square.height);
+      });
+      context('when given a size and source', function() {
+        function alloc(format) {
+          var heap = new Uint8Array(8 * 1024 * 1024),
+            offset = 999,
+            stride = YUVBuffer.suitableStride(format.width);
+          return YUVBuffer.allocPlane(format.width, format.height, heap, stride, offset);
+        }
+        planeTest(alloc(anamorphic), anamorphic.width, anamorphic.height);
+        planeTest(alloc(square), square.width, square.height);
+      });
+    });
+    describe('#lumaPlane()', function() {
+      context('when given just a format', function() {
+        function alloc(format) {
+          return YUVBuffer.lumaPlane(format);
+        }
+        planeTest(alloc(anamorphic), anamorphic.width, anamorphic.height);
+        planeTest(alloc(square), square.width, square.height);
+      });
+      context('when given a format and source', function() {
+        function alloc(format) {
+          var heap = new Uint8Array(8 * 1024 * 1024),
+            offset = 999,
+            stride = YUVBuffer.suitableStride(format.width);
+          return YUVBuffer.lumaPlane(format, heap, stride, offset);
+        }
+        planeTest(alloc(anamorphic), anamorphic.width, anamorphic.height);
+        planeTest(alloc(square), square.width, square.height);
+      });
+    });
+    describe('#chromaPlane()', function() {
+      context('when given just a format', function() {
+        function alloc(format) {
+          return YUVBuffer.chromaPlane(format);
+        }
+        planeTest(alloc(anamorphic), anamorphic.chromaWidth, anamorphic.chromaHeight);
+        planeTest(alloc(square), square.chromaWidth, square.chromaHeight);
+      });
+      context('when given a format and source', function() {
+        function alloc(format) {
+          var heap = new Uint8Array(8 * 1024 * 1024),
+            offset = 999,
+            stride = YUVBuffer.suitableStride(format.width);
+          return YUVBuffer.chromaPlane(format, heap, stride, offset);
+        }
+        planeTest(alloc(anamorphic), anamorphic.chromaWidth, anamorphic.chromaHeight);
+        planeTest(alloc(square), square.chromaWidth, square.chromaHeight);
+      });
+    });
+  });
 });

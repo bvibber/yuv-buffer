@@ -191,7 +191,7 @@ var YUVBuffer = {
     size = stride * height;
 
     if (source) {
-      if (bytes.length - offset < size) {
+      if (source.length - offset < size) {
         throw "Invalid input buffer for YUV plane; must be large enough for stride times height";
       }
       bytes = source.slice(offset, offset + size);
