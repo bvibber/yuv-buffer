@@ -96,7 +96,7 @@ var format = YUVBuffer.format({
 
 A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly in a consumer!
 
-All fields are required; as a shorthand for simpler frame layouts you can initialize an object by calling `YUVBuffer.format()` with a partial object. At its simplest you must specify `width` and `height`; you can include just the fields that will be non-default, and the rest will be derived:
+All fields are required in the format object; as a shorthand for simpler frame layouts you can let `YUVBuffer.format()` derive missing fields at creation time. You must specify `width` and `height`, and usually will need to specify `chromaWidth` and `chromaHeight` unless using 4:4:4 subsampling consistently.
 
 ```
 // HDTV 1080p
@@ -104,10 +104,12 @@ var format = YUVBuffer.format({
   // Absolutely required:
   width: 1920,
   height: 1088,
+
   // To use 4:2:0 layout, we set the chroma plane dimensions:
   chromaWidth: 1920 / 2,
   chromaHeight: 1088 / 2,
-  // Explicit cropHeight, other crop & display size implied:
+
+  // Explicit cropHeight, with other crop dimensions & display size implied:
   cropHeight: 1080
 });
 ```
