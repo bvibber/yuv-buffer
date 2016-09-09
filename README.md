@@ -152,14 +152,14 @@ var frame = YUVBuffer.frame(format, y, u, v);
 
 A `YUVPlane`-formatted object contains the actual byte array and the stride (row-to-row byte increment) of a plane. Note that the stride may be larger than the plane's width, but can never be smaller. The number of rows is not stored in the plane object, and is either `format.height` for the Y (luma) plane, or `format.chromaHeight` for the U and V (chroma) planes. The `bytes` array must have room for at least the height times the stride number of bytes.
 
-If you need to create an individual plane object with empty data, you can use the `YUVBuffer.lumaPlane()` or `YUVBuffer.chromaPlane()` functions with a format object:
+If you need to create an individual plane object with empty data, you can use the `YUVBuffer.lumaPlane()` or `YUVBuffer.chromaPlane()` functions with a format object. Appropriate dimensions and stride will be selected automatically:
 
 ```
-var frame = YUVBuffer.frame(format,
-  YUVBuffer.lumaPlane(format),
-  YUVBuffer.chromaPlane(format),
-  YUVBuffer.chromaPlane(format),
-);
+var y = YUVBuffer.lumaPlane(format),
+  u = YUVBuffer.chromaPlane(format),
+  v = YUVBuffer.chromaPlane(format);
+// ...
+var frame = YUVBuffer.frame(format, y, u, v);
 ```
 
 When you have pixels in another data structure, such as an emscripten-compiled C library's heap memory, you can extract individual plane objects from that larger structure and pass them in to the new frame by passing the source array and stride/offset:
