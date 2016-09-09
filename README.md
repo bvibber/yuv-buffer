@@ -2,11 +2,12 @@
 
 Utility package for manipulating video image frames in planar YUV encoding (also known as YCbCr).
 
-Folded out from [ogv.js](https://github.com/brion/ogv.js) in-browser implementation of HTML5 media stack.
+Planar YUV image frames represent a color image in the [YUV color space](https://en.wikipedia.org/wiki/YUV) commonly used for video processing and both video and image compression. The Y or "luma" plane holds brightness values, while the U and V "chroma" planes store color 'offsets' for blue and red components. Chroma planes are often at a different resolution than the luma plane as a method of psychovisual compression, taking advantage of the human eye's greater sensitivity to brightness and contrast over color.
+
+YUV images must usually be converted to and from RGB for actual capture and display. See the [yuv-canvas](https://github.com/brion/yuv-canvas) module for in-browser display of YUV frames, or [ogv.js](https://github.com/brion/ogv.js) for a full in-browser video decoder/player.
+
 
 #Data format
-
-Planar YUV image frames represent a color image 
 
 Actual frames are stored in plain JS objects to facilitate transfer between worker threads via structured clone; behavior is provided through static methods on the `YUVBuffer` utility namespace.
 
