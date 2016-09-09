@@ -9,8 +9,7 @@
   "keywords": [
     "yuv",
     "ycbcr",
-    "frame",
-    "buffer"
+    "framebuffer"
   ],
   "author": "Brion Vibber <brion@pobox.com>",
   "license": "MIT",
