@@ -1,4 +1,4 @@
-var YUVBuffer = require('../index.js'),
+var YUVBuffer = require('../yuv-buffer.js'),
   assert = require('assert'),
   expect = require('chai').expect;
 

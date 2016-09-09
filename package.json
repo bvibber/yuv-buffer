@@ -2,7 +2,7 @@
   "name": "yuv-buffer",
   "version": "1.0.0",
   "description": "Class representing a YUV-format image buffer",
-  "main": "index.js",
+  "main": "yuv-buffer.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
   },
