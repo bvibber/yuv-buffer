@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Class representing a YUV-format image buffer",
   "main": "yuv-buffer.js",
+  "repository" :
+  {
+    "type" : "git",
+    "url" : "https://github.com/brion/yuv-buffer.git"
+  },
   "scripts": {
     "lint": "./node_modules/grunt/bin/grunt",
     "test": "./node_modules/mocha/bin/mocha"
