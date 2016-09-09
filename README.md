@@ -6,6 +6,8 @@ Folded out from [ogv.js](https://github.com/brion/ogv.js) in-browser implementat
 
 #Data format
 
+Planar YUV image frames represent a color image 
+
 Actual frames are stored in plain JS objects to facilitate transfer between worker threads via structured clone; behavior is provided through static methods on the `YUVBuffer` utility namespace.
 
 A suitably-formatted frame buffer object looks like this:
@@ -13,10 +15,16 @@ A suitably-formatted frame buffer object looks like this:
 ```
 {
   format: {
-    frame: { width, height },
-    crop: { left, top, width, height },
-    display: { width, height },
-    chroma: { hdec, vdec }
+    width,
+    height,
+    chromaWidth,
+    chromaHeight,
+    cropLeft,
+    cropTop,
+    cropWidth,
+    cropHeight,
+    displayWidth,
+    displayHeight
   },
   y: { bytes, stride },
   u: { bytes, stride },
@@ -26,12 +34,12 @@ A suitably-formatted frame buffer object looks like this:
 
 The `format` object provides information necessary for interpreting or displaying frame data, and can be shared between many frame buffers:
 
-* `frame` lists the dimensions of the full encoded frame in raw pixels.
-* `crop` specifies a rectangle within the encoded frame containing data meant for display. Pixels outside this area are still encoded in the raw data, but are meant to be cropped out when displaying.
-* `display` lists final display dimensions, which may have a different aspect ratio than the crop rectangle (anamorphic / non-square pixels).
-* `chroma` lists the chroma subsampling ratios in horizontal and vertical dimensions. `hdec` and `vdec` are specified as a power of 2 (number of bits to shift), so for instance if `hdec` is 0 then the u and v planes have the same width as the y plane, whereas at 1 the u and v planes are half the width.
+* `width` and `height` list the full encoded dimensions of the luma plane, in luma pixels.
+* `chromaWidth` and `chromaHeight` list the full encoded dimensions of the chroma planes, in chroma pixels. These must be in a clean integer ratio to the `width` and `height` dimensions.
+* `cropLeft`, `cropTop`, `cropWidth`, and `cropHeight` specify a rectangle within the encoded frame containing data meant for display, in luma pixel units. Pixels outside this area are still encoded in the raw data, but are meant to be cropped out when displaying.
+* `displayWidth` and `displayHeight` list final display dimensions, which may have a different aspect ratio than the crop rectangle (anamorphic / non-square pixels).
 
-The `y`, `u`, and `v` properties contain the data for luma, chroma (blue), and chroma (red) components of the image:
+The `y`, `u`, and `v` properties contain the pixel data for luma (Y) and chroma (U and V) components of the image:
 * `bytes` holds a `UInt8Array` with raw pixel data. Beware that using a view into a larger array buffer (such as an emscripten-compiled C module's heap) is valid but may lead to inefficient data transfers between worker threads. Currently only 8-bit depth is supported.
 * `stride` specifies the number of bytes between the start of each row in the `bytes` array; this may be larger than the number of pixels in a row, and should usually be a multiple of 4 for alignment purposes.
 
@@ -40,44 +48,48 @@ The `y`, `u`, and `v` properties contain the data for luma, chroma (blue), and c
 First, you'll need a `YUVFormat` object describing the memory layout of the pixel data:
 
 ```
-// 1080p for a format that requires 16-pixel blocks, showing crop region
+// HDTV 1080p:
 var format = {
-  frame: {
-    width: 1920,
-    height: 1088
-  }
-  crop: {
-    left: 0,
-    top: 4,
-    width: 1920,
-    height: 1080
-  },
-  display: {
-    width: 1920,
-    height: 1080
-  },
-  chroma: YUVBuffer.CHROMA_420
+  // Many video formats require an 8- or 16-pixel block size.
+  width: 1920,
+  height: 1088,
+
+  // Using common 4:2:0 layout, chroma planes are halved in each dimension.
+  chromaWidth: 1920 / 2,
+  chromaHeight: 1088 / 2,
+
+  // Crop out a 1920x1080 visible region:
+  cropLeft: 0,
+  cropTop: 4,
+  cropWidth: 1920,
+  cropHeight: 1080,
+
+  // Square pixels, so same as the crop size.
+  displayWidth: 1920,
+  displayHeight: 1080
 };
 ```
 
 ```
-// 480p anamorphic DVD, showing non-default aspect ratio
+// 480p anamorphic DVD:
 var format = {
-  frame: {
-    width: 720,
-    height: 480
-  },
-  crop: {
-    left: 0,
-    top: 0,
-    width: 720,
-    height: 480
-  },
-  display: {
-    width: 854,
-    height: 480
-  },
-  chroma: YUVBuffer.CHROMA_420
+  // Encoded size is 720x480, for classic NTSC standard def video
+  width: 720,
+  height: 480
+
+  // DVD is also 4:2:0, so halve the chroma dimensions.
+  chromaWidth: 720 / 2,
+  chromaHeight: 480 / 2,
+
+  // Full frame is visible.
+  cropLeft: 0,
+  cropTop: 0,
+  cropWidth: 720,
+  cropHeight: 480
+
+  // Final display size stretches back out to 16:9 widescreen:
+  displayWidth: 853,
+  displayHeight: 480
 };
 ```
 
@@ -98,15 +110,15 @@ function extractFromHeap(yptr, ystride, uptr, ustride, vptr, vstride) {
   var frame = {
     format: this.format,
     y: {
-      bytes: Module.HEAPU8.slice(yptr, yptr + ystride * this.format.frame.height),
+      bytes: Module.HEAPU8.slice(yptr, yptr + ystride * this.format.height),
       stride: ystride
     },
     u: {
-      bytes: Module.HEAPU8.slice(uptr, uptr + ustride * YUVBuffer.yToChroma(this.format, this.format.frame.height)),
+      bytes: Module.HEAPU8.slice(uptr, uptr + ustride * this.format.chromaHeight),
       stride: ustride
     },
     v: {
-      bytes: Module.HEAPU8.slice(vptr, vptr + vstride * YUVBuffer.yToChroma(this.format, this.format.frame.height)),
+      bytes: Module.HEAPU8.slice(vptr, vptr + vstride * this.format.chromaHeight),
       stride: vstride
     }
   }

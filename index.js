@@ -20,36 +20,18 @@ ONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /**
- * Represents a (width,height) dimensional pair.
- * @typedef {Object} YUVSize
- * @property {number} width - horizontal units
- * @property {number} height - vertical units
- */
-
-/**
- * Represents a rectangular area.
- * @typedef {Object} YUVRect
- * @property {number} left - x coordinate of left side
- * @property {number} top - y coordinate of top
- * @property {number} width - width in units
- * @property {number} height - height in units
- */
-
-/**
- * Represents the chroma subsampling pixel format.
- * Use one of the YUVBuffer.CHROMA_* constants.
- * @typedef {Object} YUVChroma
- * @property {number} hdec - number of times to halve horizontal resolution on chroma planes
- * @property {number} vdec - number of times to halve vertical resolution on chroma planes
- */
-
-/**
  * Represents metadata about a YUV frame format.
  * @typedef {Object} YUVFormat
- * @property {YUVSize} frame - size of the encoded frame
- * @property {YUVRect} crop - area within the frame to be displayed
- * @property {YUVSize} display - display size of the crop area
- * @property {YUVChroma} chroma - subsampling layout for chroma
+ * @property {number} width - width of encoded frame in luma pixels
+ * @property {number} height - height of encoded frame in luma pixels
+ * @property {number} chromaWidth - width of encoded frame in chroma pixels
+ * @property {number} chromaHeight - height of encoded frame in chroma pixels
+ * @property {number} cropLeft - upper-left X coordinate of visible crop region, in luma pixels
+ * @property {number} cropTop - upper-left Y coordinate of visible crop region, in luma pixels
+ * @property {number} cropWidth - width of visible crop region, in luma pixels
+ * @property {number} cropHeight - height of visible crop region, in luma pixels
+ * @property {number} displayWidth - final display width of visible region, in luma pixels
+ * @property {number} displayHeight - final display height of visible region, in luma pixels
  */
 
 /**
@@ -114,7 +96,7 @@ var YUVBuffer = {
    * @returns {YUVPlane} - freshly allocated planar buffer
    */
   allocLumaPlane: function(format) {
-    return this.allocPlane(this.suitableStride(format.frame.width), format.frame.height);
+    return this.allocPlane(this.suitableStride(format.width), format.height);
   },
 
   /**
@@ -123,7 +105,7 @@ var YUVBuffer = {
    * @returns {YUVPlane} - freshly allocated planar buffer
    */
   allocChromaPlane: function(format) {
-    return this.allocPlane(this.suitableStride(this.chromaWidth(format)), this.chromaHeight(format));
+    return this.allocPlane(this.suitableStride(format.chromaWidth), format.chromaHeight);
   },
 
   /**
@@ -133,7 +115,7 @@ var YUVBuffer = {
    */
   allocFrame: function(format) {
     return {
-      format: this.copyFormat(format),
+      format: format,
       y: this.allocLumaPlane(format),
       u: this.allocChromaPlane(format),
       v: this.allocChromaPlane(format)
@@ -159,94 +141,12 @@ var YUVBuffer = {
    */
   copyFrame: function(frame) {
     return {
-      format: JSON.parse(JSON.stringify(frame.format)),
+      format: frame.format,
       y: this.copyPlane(frame.y),
       u: this.copyPlane(frame.u),
       v: this.copyPlane(frame.v)
     }
-  },
-
-  /**
-   * Convert X coordinate from luma to chroma resolution
-   * @param {YUVFormat} format - the target format
-   * @param {number} x - the X coordinate in luma resolution
-   * @returns {number} - the X coordinate in chroma resolution
-   */
-  xToChroma: function(format, x) {
-    return x >> format.chroma.hdec;
-  },
-
-  /**
-   * Convert Y coordinate from luma to chroma resolution
-   * @param {YUVFormat} format - the target format
-   * @param {number} y - the Y coordinate in luma resolution
-   * @returns {number} - the Y coordinate in chroma resolution
-   */
-  yToChroma: function(format, y) {
-    return y >> format.chroma.vdec;
   }
-
-  /**
-   * Convert X coordinate from chroma to luma resolution
-   * @param {YUVFormat} format - the target format
-   * @param {number} x - the X coordinate in chroma resolution
-   * @returns {number} - the X coordinate in luma resolution
-   */
-  xToLuma: function(format, x) {
-    return x << format.chroma.hdec;
-  },
-
-  /**
-   * Convert Y coordinate from chroma to luma resolution
-   * @param {YUVFormat} format - the target format
-   * @param {number} y - the Y coordinate in chroma resolution
-   * @returns {number} - the Y coordinate in luma resolution
-   */
-  yToLuma: function(format, y) {
-    return y << format.chroma.vdec;
-  },
-
-  /**
-   * Return the chroma-resolution width of the frame format
-   * @param {YUVFormat} format - the target format
-   * @returns {number} - the width in chroma resolution
-   */
-  chromaWidth: function(format) {
-    return this.xToChroma(format, format.frame.width);
-  },
-
-  /**
-   * Return the chroma-resolution height of the frame format
-   * @param {YUVFormat} format - the target format
-   * @returns {number} - the height in chroma resolution
-   */
-  chromaHeight: function(format) {
-    return this.yToChroma(format, format.frame.height);
-  },
-
-  /**
-   * Chroma subsampling constant for 4:4:4.
-   * @constant {YUVChroma}
-   */
-  CHROMA_444: {hdec: 0, vdec: 0},
-
-  /**
-   * Chroma subsampling constant for 4:2:2.
-   * @constant {YUVChroma}
-   */
-  CHROMA_422: {hdec: 1, vdec: 0},
-
-  /**
-   * Chroma subsampling constant for 4:1:1.
-   * @constant {YUVChroma}
-   */
-  CHROMA_411: {hdec: 2, vdec: 0},
-
-  /**
-   * Chroma subsampling constant for 4:2:0.
-   * @constant {YUVChroma}
-   */
-  CHROMA_420: {hdec: 1, vdec: 1}
 };
 
 module.exports = YUVBuffer;
