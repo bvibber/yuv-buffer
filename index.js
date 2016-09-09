@@ -63,12 +63,25 @@ ONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 var YUVBuffer = {
   /**
+   * Validate a plane dimension
+   * @param {number} dim - vertical or horizontal dimension
+   * @throws exception on zero, negative, or non-integer value
+   */
+  validateDimension: function(dim) {
+    if (dim <= 0 || dim !== (dim | 0)) {
+      throw 'YUV plane dimensions must be a positive integer';
+    }
+  },
+
+  /**
    * Allocate a new YUVPlane object of the given size.
    * @param {number} stride - byte distance between rows
    * @param {number} rows - number of rows to allocate
    * @returns {YUVPlane} - freshly allocated planar buffer
    */
   allocPlane: function(stride, rows) {
+    YUVBuffer.validateDimension(stride);
+    YUVBuffer.validateDimension(rows);
     return {
       bytes: new Uint8Array(stride * rows),
       stride: stride
@@ -79,8 +92,10 @@ var YUVBuffer = {
    * Pick a suitable stride for a custom-allocated thingy
    * @param {number} width - width in bytes
    * @returns {number} - new width in bytes at least as large
+   * @throws exception on invalid input width
    */
   suitableStride: function(width) {
+    YUVBuffer.validateDimension(width);
     var alignment = 4,
       remainder = width % alignment;
     if (remainder == 0) {
