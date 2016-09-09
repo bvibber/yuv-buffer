@@ -93,8 +93,47 @@ var format = {
 };
 ```
 
-All fields are required. A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly!
+A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly!
 
+All fields are required; as a shorthand for simpler frame layouts you can initialize an object with only the required fields by calling `YUVBuffer.format()` with a partial object:
+
+```
+// Specifying only width and height will create a 4:4:4 buffer with the
+// full frame area visible and square pixels:
+var format = YUVBuffer.format({
+  width: 1280,
+  height: 720
+});
+```
+
+```
+// Here we force a 4:2:0 buffer by setting the chroma sizes too, and also
+// crop the visible area to 1080p height.
+var format = YUVBuffer.format({
+  width: 1920,
+  height: 1088,
+  chromaWidth: 1920 / 2,
+  chromaHeight: 1088 / 2,
+  cropHeight: 1080
+});
+```
+
+expands into:
+
+```
+{
+  width: 1920,
+  height: 1088,
+  chromaWidth: 960,
+  chromaHeight: 544,
+  cropLeft: 0, // default
+  cropTop: 0, // default
+  cropWidth: 1920, // derived from width
+  cropHeight: 1080,
+  displayWidth: 1920, // derived from width via cropWidth
+  displayHeight: 1080 // derived from cropHeight
+}
+```
 
 You can allocate a blank frame with enough memory to work with using the `YUVBuffer.allocFrame` helper function:
 

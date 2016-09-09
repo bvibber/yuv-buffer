@@ -41,6 +41,44 @@ describe('YUVBuffer', function() {
       });
     });
   }),
+  describe('#validateOffset', function() {
+    context('when a valid non-negative integer', function() {
+      it('should pass through input without throwing', function() {
+        [0, 1, 2, 100, 10000].forEach(function(sample) {
+          expect(function() {
+            YUVBuffer.validateOffset(sample);
+          }).to.not.throw();
+        });
+      });
+    });
+    context('when a negative integer', function() {
+      it('should throw', function() {
+        [-1, -2, -100, -10000].forEach(function(sample) {
+          expect(function() {
+            YUVBuffer.validateOffset(sample);
+          }).to.throw();
+        });
+      });
+    });
+    context('when non-integer-safe numbers', function() {
+      it('should throw', function() {
+        [0.5, -2.3, Math.PI, 2e56, Infinity, -Infinity, NaN].forEach(function(sample) {
+          expect(function() {
+            YUVBuffer.validateOffset(sample);
+          }).to.throw();
+        });
+      });
+    });
+    context('when not even a number', function() {
+      it('should throw', function() {
+        [null, undefined, "barf", "24", {}, []].forEach(function(sample) {
+          expect(function() {
+            YUVBuffer.validateOffset(sample);
+          }).to.throw();
+        });
+      });
+    });
+  }),
   describe('#suitableStride()', function() {
     context('for multiples of 4', function() {
       it('should return identity for multiples of 4', function() {
@@ -56,6 +94,47 @@ describe('YUVBuffer', function() {
             output = sample[1];
           assert(YUVBuffer.suitableStride(input) === output);
         });
+      });
+    });
+  });
+  describe('#format()', function() {
+    context('when given invalid data', function() {
+      it('should throw when width or height missing', function() {
+        expect(function() {
+          YUVBuffer.format({});
+        }).to.throw();
+        expect(function() {
+          YUVBuffer.format({width: 200});
+        }).to.throw();
+        expect(function() {
+          YUVBuffer.format({height: 100});
+        }).to.throw();
+        expect(function() {
+          YUVBuffer.format({width: 200, height: 100});
+        }).to.not.throw();
+      });
+    });
+    context('when given partial data', function() {
+      it('should expand input', function() {
+        var input = {
+          width: 1920,
+          height: 1088,
+          chromaWidth: 1920 / 2,
+          chromaHeight: 1088 / 2,
+          cropHeight: 1080
+        }, output = {
+          width: 1920,
+          height: 1088,
+          chromaWidth: 960,
+          chromaHeight: 544,
+          cropLeft: 0, // default
+          cropTop: 0, // default
+          cropWidth: 1920, // derived from width
+          cropHeight: 1080,
+          displayWidth: 1920, // derived from width via cropWidth
+          displayHeight: 1080 // derived from cropHeight
+        };
+        assert.deepEqual(YUVBuffer.format(input), output);
       });
     });
   });

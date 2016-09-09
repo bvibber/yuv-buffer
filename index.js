@@ -74,6 +74,66 @@ var YUVBuffer = {
   },
 
   /**
+   * Validate a plane offset
+   * @param {number} dim - vertical or horizontal dimension
+   * @throws exception on negative or non-integer value
+   */
+  validateOffset: function(dim) {
+    if (dim < 0 || dim !== (dim | 0)) {
+      throw 'YUV plane offsets must be a non-negative integer';
+    }
+  },
+
+  /**
+   * Validate and fill out a YUVFormat object structure.
+   *
+   * At least width and height fields are required; other fields will be
+   * derived if left missing or empty:
+   * - chromaWidth and chromaHeight will be copied from width and height as for a 4:4:4 layout
+   * - cropLeft and cropTop will be 0
+   * - cropWidth and cropHeight will be set to whatever of the frame is visible after cropTop and cropLeft are applied
+   * - displayWidth and displayHeight will be set to cropWidth and cropHeight.
+   *
+   * @param {YUVFormat} fields - input fields, must include width and height.
+   * @returns {YUVFormat} - validated structure, with all derivable fields filled out.
+   * @throws exception on invalid fields or missing width/height
+   */
+  format: function(fields) {
+    var width = fields.width,
+      height = fields.height,
+      chromaWidth = fields.chromaWidth || width,
+      chromaHeight = fields.chromaHeight || height,
+      cropLeft = fields.cropLeft || 0,
+      cropTop = fields.cropTop || 0,
+      cropWidth = fields.cropWidth || width - cropLeft,
+      cropHeight = fields.cropHeight || height - cropTop,
+      displayWidth = fields.displayWidth || cropWidth,
+      displayHeight = fields.displayHeight || cropHeight;
+    this.validateDimension(width);
+    this.validateDimension(height);
+    this.validateDimension(chromaWidth);
+    this.validateDimension(chromaHeight);
+    this.validateOffset(cropLeft);
+    this.validateOffset(cropTop);
+    this.validateDimension(cropWidth);
+    this.validateDimension(cropHeight);
+    this.validateDimension(displayWidth);
+    this.validateDimension(displayHeight);
+    return {
+      width: width,
+      height: height,
+      chromaWidth: chromaWidth,
+      chromaHeight: chromaHeight,
+      cropLeft: cropLeft,
+      cropTop: cropTop,
+      cropWidth: cropWidth,
+      cropHeight: cropHeight,
+      displayWidth: displayWidth,
+      displayHeight: displayHeight
+    };
+  },
+
+  /**
    * Allocate a new YUVPlane object of the given size.
    * @param {number} stride - byte distance between rows
    * @param {number} rows - number of rows to allocate
