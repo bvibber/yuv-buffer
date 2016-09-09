@@ -44,13 +44,13 @@ The `y`, `u`, and `v` properties contain the pixel data for luma (Y) and chroma 
 * `bytes` holds a `UInt8Array` with raw pixel data. Beware that using a view into a larger array buffer (such as an emscripten-compiled C module's heap) is valid but may lead to inefficient data transfers between worker threads. Currently only 8-bit depth is supported.
 * `stride` specifies the number of bytes between the start of each row in the `bytes` array; this may be larger than the number of pixels in a row, and should usually be a multiple of 4 for alignment purposes.
 
-# Creating a frame buffer
+## Format objects
 
-First, you'll need a `YUVFormat` object describing the memory layout of the pixel data:
+To create or process a YUV frame, you'll need a `YUVFormat` object describing the memory layout of the pixel data. These are plain JavaScript objects to facilitate data transfer, but should be validated with the `YUVBuffer.format()` function:
 
 ```
 // HDTV 1080p:
-var format = {
+var format = YUVBuffer.format({
   // Many video formats require an 8- or 16-pixel block size.
   width: 1920,
   height: 1088,
@@ -68,12 +68,12 @@ var format = {
   // Square pixels, so same as the crop size.
   displayWidth: 1920,
   displayHeight: 1080
-};
+});
 ```
 
 ```
 // 480p anamorphic DVD:
-var format = {
+var format = YUVBuffer.format({
   // Encoded size is 720x480, for classic NTSC standard def video
   width: 720,
   height: 480
@@ -91,30 +91,23 @@ var format = {
   // Final display size stretches back out to 16:9 widescreen:
   displayWidth: 853,
   displayHeight: 480
-};
-```
-
-A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly!
-
-All fields are required; as a shorthand for simpler frame layouts you can initialize an object with only the required fields by calling `YUVBuffer.format()` with a partial object:
-
-```
-// Specifying only width and height will create a 4:4:4 buffer with the
-// full frame area visible and square pixels:
-var format = YUVBuffer.format({
-  width: 1280,
-  height: 720
 });
 ```
 
+A common format object can be passed in to multiple frames, so be sure not to change them unexpectedly in a consumer!
+
+All fields are required; as a shorthand for simpler frame layouts you can initialize an object by calling `YUVBuffer.format()` with a partial object. At its simplest you must specify `width` and `height`; you can include just the fields that will be non-default, and the rest will be derived:
+
 ```
-// Here we force a 4:2:0 buffer by setting the chroma sizes too, and also
-// crop the visible area to 1080p height.
+// HDTV 1080p
 var format = YUVBuffer.format({
+  // Absolutely required:
   width: 1920,
   height: 1088,
+  // To use 4:2:0 layout, we set the chroma plane dimensions:
   chromaWidth: 1920 / 2,
   chromaHeight: 1088 / 2,
+  // Explicit cropHeight, other crop & display size implied:
   cropHeight: 1080
 });
 ```
@@ -136,52 +129,65 @@ expands into:
 }
 ```
 
-You can allocate a blank frame with enough memory to work with using the `YUVBuffer.allocFrame` helper function:
+# Frame objects
+
+Objects in `YUVFrame` layout are also plain JavaScript objects to facilitate transfer between Worker threads and potentially storage in IndexedDB.
+
+You can allocate a blank frame with enough memory to work with using the `YUVBuffer.frame()` helper function, passing in the format object:
 
 ```
-var frame = YUVBuffer.allocFrame(format);
+var frame = YUVBuffer.frame(format);
 console.log(frame.y.bytes.length); // bunch o' bytes
 ```
 
-Or, you can create one yourself, such as when extracting from a different data structure. For instance when extracting data from a C library translated with emscripten, you might do something like this:
+Or if you have planes of data ready to go, you can pass them in as well:
 
 ```
-function extractFromHeap(yptr, ystride, uptr, ustride, vptr, vstride) {
-  var frame = {
-    format: this.format,
-    y: {
-      bytes: Module.HEAPU8.slice(yptr, yptr + ystride * this.format.height),
-      stride: ystride
-    },
-    u: {
-      bytes: Module.HEAPU8.slice(uptr, uptr + ustride * this.format.chromaHeight),
-      stride: ustride
-    },
-    v: {
-      bytes: Module.HEAPU8.slice(vptr, vptr + vstride * this.format.chromaHeight),
-      stride: vstride
-    }
-  }
-  // And pass back to caller
-  this.onFrameCallback(frame);
-}
+var frame = YUVBuffer.frame(format, y, u, v);
 ```
+
+# Plane objects
+
+A `YUVPlane`-formatted object contains the actual byte array and the stride (row-to-row byte increment) of a plane. Note that the stride may be larger than the plane's width, but can never be smaller. The number of rows is not stored in the plane object, and is either `format.height` for the Y (luma) plane, or `format.chromaHeight` for the U and V (chroma) planes. The `bytes` array must have room for at least the height times the stride number of bytes.
+
+If you need to create an individual plane object with empty data, you can use the `YUVBuffer.lumaPlane()` or `YUVBuffer.chromaPlane()` functions with a format object:
+
+```
+var frame = YUVBuffer.frame(format,
+  YUVBuffer.lumaPlane(format),
+  YUVBuffer.chromaPlane(format),
+  YUVBuffer.chromaPlane(format),
+);
+```
+
+When you have pixels in another data structure, such as an emscripten-compiled C library's heap memory, you can extract individual plane objects from that larger structure and pass them in to the new frame by passing the source array and stride/offset:
+
+```
+// Module.HEAPU8 is a large Uint8Array
+var frame = YUVBuffer.frame(format,
+  YUVBuffer.lumaPlane(format, Module.HEAPU8, ystride, yoffset),
+  YUVBuffer.chromaPlane(format, Module.HEAPU8, ustride, uoffset),
+  YUVBuffer.chromaPlane(format, Module.HEAPU8, vstride, voffset)
+);
+```
+
+Note this will make a copy of the bytes in the source array(s). It's possible to manually create "live" views into a heap but this is error-prone; see the "Heap extraction"" section below.
 
 # Performance concerns
 
-*Threading*
+##Threading
 
 Since video processing is CPU-intensive, it is expected that frame data may need to be shuffled between multiple Web Worker threads -- for instance a video decoder in a background thread sending frames to be displayed back to the main thread. Frame buffer objects are plain JS objects to facilitate being sent via [`postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)'s "structured clone" algorithm. To transfer the raw pixel data buffers instead of copying them in this case, list an array containing the `bytes` subproperties as transferables:
 
 ```
 // video-worker.js
 while (true) {
-  buffer = processNextFrame();
-  postMessage({nextFrame: buffer}, [buffer.y.bytes, buffer.u.bytes, buffer.v.bytes]);
+  var frame = processNextFrame();
+  postMessage({nextFrame: frame}, YUVBuffer.transferables(frame));
 }
 ```
 
-*Heap extraction*
+##Heap extraction
 
 Producers can avoid a data copy by using `Uint8Array` byte arrays that are views of a larger buffer, such as an emscripten-compiled C library's heap array. However this introduces several potential sources of bugs:
 
@@ -193,7 +199,7 @@ You can use the `YUVBuffer.copyFrame` static method to duplicate a frame object 
 
 If deliberately using `subarray` views, be careful to avoid data corruption or bloated copies.
 
-*Recycling*
+##Recycling
 
 Creating and deleting many frame buffer objects may cause some garbage collection churn or memory fragmentation; it may be advantageous to recycle spare buffers in a producer-consumer loop.
 

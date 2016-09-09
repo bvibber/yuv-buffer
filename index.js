@@ -166,21 +166,70 @@ var YUVBuffer = {
   },
 
   /**
-   * Allocate a new YUVPlane object big enough for a luma plane in the given format
-   * @param {YUVFormat} format - target frame format
+   * Allocate or extract a YUVPlane object from given dimensions/source.
+   * @param {number} width - width in pixels
+   * @param {number} height - height in pixels
+   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {number} stride - row length in bytes; optional (will create a default if missing)
+   * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
    * @returns {YUVPlane} - freshly allocated planar buffer
    */
-  allocLumaPlane: function(format) {
-    return this.allocPlane(this.suitableStride(format.width), format.height);
+  allocPlane: function(width, height, source, stride, offset) {
+    var size, bytes;
+
+    this.validateDimension(width);
+    this.validateDimension(height);
+
+    offset = offset || 0;
+
+    stride = stride || this.suitableStride(width);
+    this.validateDimension(stride);
+    if (stride < width) {
+      throw "Invalid input stride for YUV plane; must be larger than width";
+    }
+
+    size = stride * height;
+
+    if (source) {
+      if (bytes.length - offset < size) {
+        throw "Invalid input buffer for YUV plane; must be large enough for stride times height";
+      }
+      bytes = source.slice(offset, offset + size);
+    } else {
+      bytes = new Uint8Array(size);
+      stride = stride || this.suitableStride(width);
+    }
+
+    return {
+      bytes: bytes,
+      stride: stride
+    };
   },
 
   /**
-   * Allocate a new YUVPlane object big enough for a chroma plane in the given format
+   * Allocate a new YUVPlane object big enough for a luma plane in the given format
    * @param {YUVFormat} format - target frame format
+   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {number} stride - row length in bytes; optional (will create a default if missing)
+   * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
    * @returns {YUVPlane} - freshly allocated planar buffer
    */
-  allocChromaPlane: function(format) {
-    return this.allocPlane(this.suitableStride(format.chromaWidth), format.chromaHeight);
+  lumaPlane: function(format, source, stride, offset) {
+    return this.allocPlane(format.width, format.height, source, stride, offset);
+  },
+
+  /**
+   * Allocate a new YUVPlane object big enough for a chroma plane in the given format,
+   * optionally copying data from an existing buffer.
+   *
+   * @param {YUVFormat} format - target frame format
+   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {number} stride - row length in bytes; optional (will create a default if missing)
+   * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
+   * @returns {YUVPlane} - freshly allocated planar buffer
+   */
+  chromaPlane: function(format, source, stride, offset) {
+    return this.allocPlane(format.chromaWidth, format.chromaHeight, source, stride, offset);
   },
 
   /**
@@ -188,12 +237,15 @@ var YUVBuffer = {
    * @param {YUVFormat} format - target frame format
    * @returns {YUVFrame} - freshly allocated frame buffer
    */
-  allocFrame: function(format) {
+  frame: function(format, y, u, v) {
+    y = y || this.lumaPlane(format);
+    u = u || this.chromaPlane(format);
+    v = v || this.chromaPlane(format);
     return {
       format: format,
-      y: this.allocLumaPlane(format),
-      u: this.allocChromaPlane(format),
-      v: this.allocChromaPlane(format)
+      y: y,
+      u: u,
+      v: v
     }
   },
 
@@ -221,6 +273,16 @@ var YUVBuffer = {
       u: this.copyPlane(frame.u),
       v: this.copyPlane(frame.v)
     }
+  },
+
+  /**
+   * List the backing buffers for the frame's planes for transfer between
+   * threads via Worker.postMessage.
+   * @param {YUVFrame} frame - input frame
+   * @returns Array - list of transferable objects
+   */
+  transferables(frame) {
+    return [frame.y.bytes.buffer, frame.u.bytes.buffer, frame.v.bytes.buffer];
   }
 };
 
