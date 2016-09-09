@@ -4,6 +4,7 @@
   "description": "Class representing a YUV-format image buffer",
   "main": "yuv-buffer.js",
   "scripts": {
+    "lint": "./node_modules/grunt/bin/grunt",
     "test": "./node_modules/mocha/bin/mocha"
   },
   "keywords": [

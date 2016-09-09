@@ -7,7 +7,7 @@ module.exports = function(grunt) {
     eslint: {
       options: {
       },
-      target: 'index.js'
+      target: 'yuv-buffer.js'
     }
   });
 

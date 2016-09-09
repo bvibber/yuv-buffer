@@ -169,7 +169,7 @@ var YUVBuffer = {
    * Allocate or extract a YUVPlane object from given dimensions/source.
    * @param {number} width - width in pixels
    * @param {number} height - height in pixels
-   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {Uint8Array} source - input byte array; optional (will create empty buffer if missing)
    * @param {number} stride - row length in bytes; optional (will create a default if missing)
    * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
    * @returns {YUVPlane} - freshly allocated planar buffer
@@ -209,7 +209,7 @@ var YUVBuffer = {
   /**
    * Allocate a new YUVPlane object big enough for a luma plane in the given format
    * @param {YUVFormat} format - target frame format
-   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {Uint8Array} source - input byte array; optional (will create empty buffer if missing)
    * @param {number} stride - row length in bytes; optional (will create a default if missing)
    * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
    * @returns {YUVPlane} - freshly allocated planar buffer
@@ -223,7 +223,7 @@ var YUVBuffer = {
    * optionally copying data from an existing buffer.
    *
    * @param {YUVFormat} format - target frame format
-   * @param {Uint8Array} bytes - input byte array; optional (will create empty buffer if missing)
+   * @param {Uint8Array} source - input byte array; optional (will create empty buffer if missing)
    * @param {number} stride - row length in bytes; optional (will create a default if missing)
    * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
    * @returns {YUVPlane} - freshly allocated planar buffer
@@ -235,6 +235,9 @@ var YUVBuffer = {
   /**
    * Allocate a new YUVFrame object big enough for the given format
    * @param {YUVFormat} format - target frame format
+   * @param {YUVPlane} y - optional Y plane; if missing, fresh one will be allocated
+   * @param {YUVPlane} u - optional U plane; if missing, fresh one will be allocated
+   * @param {YUVPlane} v - optional V plane; if missing, fresh one will be allocated
    * @returns {YUVFrame} - freshly allocated frame buffer
    */
   frame: function(format, y, u, v) {
@@ -279,9 +282,9 @@ var YUVBuffer = {
    * List the backing buffers for the frame's planes for transfer between
    * threads via Worker.postMessage.
    * @param {YUVFrame} frame - input frame
-   * @returns Array - list of transferable objects
+   * @returns {Array} - list of transferable objects
    */
-  transferables(frame) {
+  transferables: function(frame) {
     return [frame.y.bytes.buffer, frame.u.bytes.buffer, frame.v.bytes.buffer];
   }
 };
