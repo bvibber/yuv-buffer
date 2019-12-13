@@ -1,4 +1,4 @@
-#yuv-buffer
+# yuv-buffer
 
 Utility package for manipulating video image frames in planar YUV encoding (also known as YCbCr).
 
@@ -6,8 +6,69 @@ Planar YUV image frames represent a color image in the [YUV color space](https:/
 
 YUV images must usually be converted to and from RGB for actual capture and display. See the [yuv-canvas](https://github.com/brion/yuv-canvas) module for in-browser display of YUV frames, or [ogv.js](https://github.com/brion/ogv.js) for a full in-browser video decoder/player.
 
+## Installation
+```sh
+$ npm install yuv-buffer
+```
 
-#Data format
+## Usage
+- javascript
+```js
+var YUVBuffer = require("yuv-buffer.js");
+
+// HDTV 1080p:
+var format = {
+  // Many video formats require an 8- or 16-pixel block size.
+  width: 1920,
+  height: 1088,
+
+  // Using common 4:2:0 layout, chroma planes are halved in each dimension.
+  chromaWidth: 1920 / 2,
+  chromaHeight: 1088 / 2,
+
+  // Crop out a 1920x1080 visible region:
+  cropLeft: 0,
+  cropTop: 4,
+  cropWidth: 1920,
+  cropHeight: 1080,
+
+  // Square pixels, so same as the crop size.
+  displayWidth: 1920,
+  displayHeight: 1080
+};
+
+var format = YUVBuffer.format(format);
+```
+
+- typescript
+```typescript
+import YUVBuffer, { YUVFormat, YUVFrame, YUVPlane } from "yuv-buffer";
+
+// HDTV 1080p:
+let format: YUVFormat = {
+  // Many video formats require an 8- or 16-pixel block size.
+  width: 1920,
+  height: 1088,
+
+  // Using common 4:2:0 layout, chroma planes are halved in each dimension.
+  chromaWidth: 1920 / 2,
+  chromaHeight: 1088 / 2,
+
+  // Crop out a 1920x1080 visible region:
+  cropLeft: 0,
+  cropTop: 4,
+  cropWidth: 1920,
+  cropHeight: 1080,
+
+  // Square pixels, so same as the crop size.
+  displayWidth: 1920,
+  displayHeight: 1080,
+};
+
+format = YUVBuffer.format(format);
+```
+
+## Data format
 
 Actual frames are stored in plain JS objects to facilitate transfer between worker threads via structured clone; behavior is provided through static methods on the `YUVBuffer` utility namespace.
 
@@ -44,7 +105,7 @@ The `y`, `u`, and `v` properties contain the pixel data for luma (Y) and chroma 
 * `bytes` holds a `UInt8Array` with raw pixel data. Beware that using a view into a larger array buffer (such as an emscripten-compiled C module's heap) is valid but may lead to inefficient data transfers between worker threads. Currently only 8-bit depth is supported.
 * `stride` specifies the number of bytes between the start of each row in the `bytes` array; this may be larger than the number of pixels in a row, and should usually be a multiple of 4 for alignment purposes.
 
-## Format objects
+### Format objects
 
 To create or process a YUV frame, you'll need a `YUVFormat` object describing the memory layout of the pixel data. These are plain JavaScript objects to facilitate data transfer, but should be validated with the `YUVBuffer.format()` function:
 
@@ -131,7 +192,7 @@ expands into:
 }
 ```
 
-# Frame objects
+### Frame objects
 
 Objects in `YUVFrame` layout are also plain JavaScript objects to facilitate transfer between Worker threads and potentially storage in IndexedDB.
 
@@ -148,7 +209,7 @@ Or if you have planes of data ready to go, you can pass them in as well:
 var frame = YUVBuffer.frame(format, y, u, v);
 ```
 
-# Plane objects
+### Plane objects
 
 A `YUVPlane`-formatted object contains the actual byte array and the stride (row-to-row byte increment) of a plane. Note that the stride may be larger than the plane's width, but can never be smaller. The number of rows is not stored in the plane object, and is either `format.height` for the Y (luma) plane, or `format.chromaHeight` for the U and V (chroma) planes. The `bytes` array must have room for at least the height times the stride number of bytes.
 
@@ -175,9 +236,9 @@ var frame = YUVBuffer.frame(format,
 
 Note this will make a copy of the bytes in the source array(s). It's possible to manually create "live" views into a heap but this is error-prone; see the "Heap extraction"" section below.
 
-# Performance concerns
+## Performance concerns
 
-##Threading
+### Threading
 
 Since video processing is CPU-intensive, it is expected that frame data may need to be shuffled between multiple Web Worker threads -- for instance a video decoder in a background thread sending frames to be displayed back to the main thread. Frame buffer objects are plain JS objects to facilitate being sent via [`postMessage`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)'s "structured clone" algorithm. To transfer the raw pixel data buffers instead of copying them in this case, list an array containing the `bytes` subproperties as transferables:
 
@@ -189,7 +250,7 @@ while (true) {
 }
 ```
 
-##Heap extraction
+### Heap extraction
 
 Producers can avoid a data copy by using `Uint8Array` byte arrays that are views of a larger buffer, such as an emscripten-compiled C library's heap array. However this introduces several potential sources of bugs:
 
@@ -201,13 +262,13 @@ You can use the `YUVBuffer.copyFrame` static method to duplicate a frame object 
 
 If deliberately using `subarray` views, be careful to avoid data corruption or bloated copies.
 
-##Recycling
+### Recycling
 
 Creating and deleting many frame buffer objects may cause some garbage collection churn or memory fragmentation; it may be advantageous to recycle spare buffers in a producer-consumer loop.
 
 It can be difficult to avoid GC churn when sending data between threads as objects will be created and destroyed on each end, but the pixel buffers can be transferred back and forth without deallocation.
 
-#Now what?
+## Now what?
 
 So you have a YUV image frame buffer format. What do you do with it?
 
