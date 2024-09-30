@@ -134,21 +134,6 @@ var YUVBuffer = {
   },
 
   /**
-   * Allocate a new YUVPlane object of the given size.
-   * @param {number} stride - byte distance between rows
-   * @param {number} rows - number of rows to allocate
-   * @returns {YUVPlane} - freshly allocated planar buffer
-   */
-  allocPlane: function(stride, rows) {
-    YUVBuffer.validateDimension(stride);
-    YUVBuffer.validateDimension(rows);
-    return {
-      bytes: new Uint8Array(stride * rows),
-      stride: stride
-    }
-  },
-
-  /**
    * Pick a suitable stride for a custom-allocated thingy
    * @param {number} width - width in bytes
    * @returns {number} - new width in bytes at least as large
