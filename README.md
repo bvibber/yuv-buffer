@@ -6,6 +6,13 @@ Planar YUV image frames represent a color image in the [YUV color space](https:/
 
 YUV images must usually be converted to and from RGB for actual capture and display. See the [yuv-canvas](https://github.com/bvibber/yuv-canvas) module for in-browser display of YUV frames, or [ogv.js](https://github.com/bvibber/ogv.js) for a full in-browser video decoder/player.
 
+## Change log
+
+1.0.1
+* update URLs, names in docs
+* fix stray duplicate function
+* merged fix for TypeScript annotations (hopefully correct)
+
 ## Installation
 ```sh
 $ npm install yuv-buffer

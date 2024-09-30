@@ -1,6 +1,6 @@
 {
   "name": "yuv-buffer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Class representing a YUV-format image buffer",
   "main": "yuv-buffer.js",
   "types": "yuv-buffer.d.ts",
