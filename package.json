@@ -20,6 +20,7 @@
   "author": "Brooke Vibber <bvibber@pobox.com>",
   "license": "MIT",
   "devDependencies": {
+    "chai": "4.4.1",
     "grunt": "^1.0.1",
     "grunt-eslint": "^19.0.0",
     "mocha": "^3.0.2"
