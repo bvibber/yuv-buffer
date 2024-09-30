@@ -6,7 +6,7 @@
   "types": "yuv-buffer.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/brion/yuv-buffer.git"
+    "url": "https://github.com/bvibber/yuv-buffer.git"
   },
   "scripts": {
     "lint": "./node_modules/grunt/bin/grunt",
@@ -17,7 +17,7 @@
     "ycbcr",
     "framebuffer"
   ],
-  "author": "Brion Vibber <brion@pobox.com>",
+  "author": "Brooke Vibber <bvibber@pobox.com>",
   "license": "MIT",
   "devDependencies": {
     "grunt": "^1.0.1",
