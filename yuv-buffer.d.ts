@@ -1,3 +1,5 @@
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
 /**
  * Validate and fill out a YUVFormat object structure.
  *
@@ -12,39 +14,39 @@
  * @returns {YUVFormat} - validated structure, with all derivable fields filled out.
  * @throws exception on invalid fields or missing width/height
  */
-export function format(fields: YUVFormat): YUVFormat;
+export function format(fields: Optional<YUVFormat, 'chromaWidth' | 'chromaHeight' | 'cropLeft' | 'cropTop' | 'cropWidth' | 'cropHeight' | 'displayWidth' | 'displayHeight'>): YUVFormat;
 
 /**
  * Allocate a new YUVPlane object big enough for a luma plane in the given format
  * @param {YUVFormat} format - target frame format
- * @param {Uint8Array} source - input byte array; optional (will create empty buffer if missing)
- * @param {number} stride - row length in bytes; optional (will create a default if missing)
- * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
+ * @param {Uint8Array} [source] - input byte array; optional (will create empty buffer if missing)
+ * @param {number} [stride] - row length in bytes; optional (will create a default if missing)
+ * @param {number} [offset] - offset into source array to extract; optional (will start at 0 if missing)
  * @returns {YUVPlane} - freshly allocated planar buffer
  */
-export function lumaPlane(format: YUVFormat, source: Uint8Array, stride: number, offset: number): YUVPlane;
+export function lumaPlane(format: YUVFormat, source?: Uint8Array, stride?: number, offset?: number): YUVPlane;
 
 /**
  * Allocate a new YUVPlane object big enough for a chroma plane in the given format,
  * optionally copying data from an existing buffer.
  *
  * @param {YUVFormat} format - target frame format
- * @param {Uint8Array} source - input byte array; optional (will create empty buffer if missing)
- * @param {number} stride - row length in bytes; optional (will create a default if missing)
- * @param {number} offset - offset into source array to extract; optional (will start at 0 if missing)
+ * @param {Uint8Array} [source] - input byte array; optional (will create empty buffer if missing)
+ * @param {number} [stride] - row length in bytes; optional (will create a default if missing)
+ * @param {number} [offset] - offset into source array to extract; optional (will start at 0 if missing)
  * @returns {YUVPlane} - freshly allocated planar buffer
  */
-export function chromaPlane(format: YUVFormat, source: Uint8Array, stride: number, offset: number): YUVPlane;
+export function chromaPlane(format: YUVFormat, source?: Uint8Array, stride?: number, offset?: number): YUVPlane;
 
 /**
  * Allocate a new YUVFrame object big enough for the given format
  * @param {YUVFormat} format - target frame format
- * @param {YUVPlane} y - optional Y plane; if missing, fresh one will be allocated
- * @param {YUVPlane} u - optional U plane; if missing, fresh one will be allocated
- * @param {YUVPlane} v - optional V plane; if missing, fresh one will be allocated
+ * @param {YUVPlane} [y] - optional Y plane; if missing, fresh one will be allocated
+ * @param {YUVPlane} [u] - optional U plane; if missing, fresh one will be allocated
+ * @param {YUVPlane} [v] - optional V plane; if missing, fresh one will be allocated
  * @returns {YUVFrame} - freshly allocated frame buffer
  */
-export function frame(format: YUVFormat, y: YUVPlane, u: YUVPlane, v: YUVPlane): YUVFrame;
+export function frame(format: YUVFormat, y?: YUVPlane, u?: YUVPlane, v?: YUVPlane): YUVFrame;
 
 /**
  * Duplicate a frame using new buffer memory.
